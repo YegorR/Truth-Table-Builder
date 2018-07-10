@@ -7,20 +7,45 @@ class Node:
     right = None
 
     def __init__(self, local_form):
+        success = False
+        return
         local_form = local_form.strip()
         while True:
             # 0. Если строка пустая
             if not local_form:
-                return False
+                return
             # 1. Если справа или слева - +|*& или - справа то ошибка
             if local_form[0] in self.dis or local_form[0] in self.con:
-                return False
+                return
             if local_form[-1] in self.dis or local_form[-1] in self.con or local_form[-1] == '-':
-                return False
+                return
             else:
                 break
         brackets = self.__brackets(local_form)
-        print(brackets)  # Проверка, работают ли скобки адекватно
+        if brackets is None:
+            return
+
+        def out_of(bracket_range, length):
+            i = length-1
+            if len(bracket_range) == 0:
+                while i >= 0:
+                    yield i
+                    i -= 1
+            else:
+                flag = len(bracket_range) - 1
+                while i >= 0:
+                    if flag < 0 or i > bracket_range[flag][1]:
+                        yield i
+                        i -= 1
+                    else:
+                        i = bracket_range[flag][0] - 1
+                        flag -= 1
+
+
+        for i in out_of(brackets, len(local_form)):
+            print(i)        #  Проверяем работу генератора дважды
+
+
 
     def __brackets(self, local_form):
         result = []
