@@ -1,8 +1,13 @@
+"""Node - an object of a parsed logical formula, a semantic tree.
+
+Author - Yegor Ryazantsev"""
+
+
 from string import ascii_letters
 import re
 
+
 class Node:
-    nodeType = {'Letter': 0, 'True': 1, 'False': 2, 'Tree': 3}
     dis = {'+', '|'}
     con = {'*', '&'}
     type = None
@@ -32,23 +37,33 @@ class Node:
             return None
         return result
 
-    def parse(self, local_form):
-        local_form = local_form.strip()
+    def parse(self, formula):
+
+        """Create the object with parsing of logical formula.
+
+        Params:
+        formula - str, the formula.
+        Returns:
+        True, if parsing is successful and the formula is correct; else, False.
+        """
+
+
+        formula = formula.strip()
         brackets = []
         while True:
             # 0. Если строка пустая
-            if re.search("[^01\+|\*&()\-a-zA-Z\s=>]",local_form) != None or not local_form:
+            if re.search("[^01\+|\*&()\-a-zA-Z\s=>]", formula) != None or not formula:
                 return False
             # 1. Если справа или слева - +|*& или - справа то ошибка
-            if local_form[0] in self.dis or local_form[0] in self.con:
+            if formula[0] in self.dis or formula[0] in self.con:
                 return False
-            if local_form[-1] in self.dis or local_form[-1] in self.con or local_form[-1] == '-':
+            if formula[-1] in self.dis or formula[-1] in self.con or formula[-1] == '-':
                 return False
-            brackets = self.__getbrackets(local_form)
+            brackets = self.__getbrackets(formula)
             if brackets is None:
                 return False
-            if len(brackets) == 1 and brackets[0] == [0, len(local_form)-1]:
-                local_form = local_form[1:-1].strip()
+            if len(brackets) == 1 and brackets[0] == [0, len(formula) - 1]:
+                formula = formula[1:-1].strip()
             else:
                 break
 
@@ -71,32 +86,40 @@ class Node:
         priority = {'=': 0, '>': 1, '+': 2, '|': 2, '*': 3, '&': 3, '-': 4}
         found = -1
         present_priority = 5
-        for i in out_of(brackets, len(local_form)):
-            if priority.get(local_form[i], 5) < present_priority:
+        for i in out_of(brackets, len(formula)):
+            if priority.get(formula[i], 5) < present_priority:
                 found = i
-                present_priority = priority.get(local_form[i], 5)
+                present_priority = priority.get(formula[i], 5)
 
         if found == -1:
-            if len(local_form) > 1:
+            if len(formula) > 1:
                 return False
             else:
-                self.type = local_form
+                self.type = formula
                 return True
         else:
-            if local_form[found] == '-':
+            if formula[found] == '-':
                 if found != 0:
                     return False
                 else:
                     self.type = '-'
                     self.right = Node()
-                    return self.right.parse(local_form[1:])
+                    return self.right.parse(formula[1:])
             else:
-                self.type = local_form[found]
+                self.type = formula[found]
                 self.left = Node()
                 self.right = Node()
-                return self.left.parse(local_form[:found]) and self.right.parse(local_form[found+1:])
+                return self.left.parse(formula[:found]) and self.right.parse(formula[found + 1:])
 
     def calc(self, **args):
+
+        """Calculate the logical value of the logical formula.
+
+        Params:
+        **args - values of logical variables.
+        Returns:
+        The logical value of the formula or None if the formula isn't correct."""
+
         if self.type == '-':
             answer = self.right.calc(**args)
             if answer is None:
@@ -134,6 +157,9 @@ class Node:
             return args.get(self.type, None)
 
     def args(self):
+
+        """Returns a set of names of the variables of the formula."""
+
         try:
             if self.type in ascii_letters:
                 return {self.type}
