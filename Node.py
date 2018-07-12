@@ -31,6 +31,7 @@ class Node:
 
     def parse(self, local_form):
         local_form = local_form.strip()
+        brackets = []
         while True:
             # 0. Если строка пустая
             if not local_form:
@@ -40,11 +41,13 @@ class Node:
                 return False
             if local_form[-1] in self.dis or local_form[-1] in self.con or local_form[-1] == '-':
                 return False
+            brackets = self.__getbrackets(local_form)
+            if brackets is None:
+                return False
+            if len(brackets) == 1 and brackets[0] == [0, len(local_form)-1]:
+                local_form = local_form[1:-1].strip()
             else:
                 break
-        brackets = self.__getbrackets(local_form)
-        if brackets is None:
-            return False
 
         def out_of(bracket_range, length):
             i = length - 1
@@ -61,4 +64,32 @@ class Node:
                     else:
                         i = bracket_range[flag][0] - 1
                         flag -= 1
+
+        priority = {'=': 0, '>': 1, '+': 2, '|': 2, '*': 3, '&': 3, '-': 4}
+        found = -1
+        present_priority = 5
+        for i in out_of(brackets, len(local_form)):
+            if priority.get(local_form[i], 5) < present_priority:
+                found = i
+                present_priority = priority.get(local_form[i], 5)
+
+        if found == -1:
+            if len(local_form) > 1:
+                return False
+            else:
+                type = local_form
+                return True
+        else:
+            if local_form[found] == '-':
+                if found != 0:
+                    return False
+                else:
+                    type = '-'
+                    right = Node()
+                    return right.parse(local_form[1:])
+            else:
+                type = local_form[found]
+                left = Node()
+                right = Node()
+                return left.parse(local_form[:found]) and right.parse(local_form[found+1:])
         return True
