@@ -1,4 +1,5 @@
 from string import ascii_letters
+import re
 
 class Node:
     nodeType = {'Letter': 0, 'True': 1, 'False': 2, 'Tree': 3}
@@ -36,7 +37,7 @@ class Node:
         brackets = []
         while True:
             # 0. Если строка пустая
-            if not local_form:
+            if re.search("[^01\+|\*&()\-a-zA-Z\s=>]",local_form) != None or not local_form:
                 return False
             # 1. Если справа или слева - +|*& или - справа то ошибка
             if local_form[0] in self.dis or local_form[0] in self.con:
@@ -79,50 +80,49 @@ class Node:
             if len(local_form) > 1:
                 return False
             else:
-                type = local_form
+                self.type = local_form
                 return True
         else:
             if local_form[found] == '-':
                 if found != 0:
                     return False
                 else:
-                    type = '-'
-                    right = Node()
-                    return right.parse(local_form[1:])
+                    self.type = '-'
+                    self.right = Node()
+                    return self.right.parse(local_form[1:])
             else:
-                type = local_form[found]
-                left = Node()
-                right = Node()
-                return left.parse(local_form[:found]) and right.parse(local_form[found+1:])
-        return True
+                self.type = local_form[found]
+                self.left = Node()
+                self.right = Node()
+                return self.left.parse(local_form[:found]) and self.right.parse(local_form[found+1:])
 
     def calc(self, **args):
         if self.type == '-':
-            answer = self.right.calc(args)
+            answer = self.right.calc(**args)
             if answer is None:
                 return None
             return not answer
         if self.type in self.con:
-            answer1 = self.left.calc(args)
-            answer2 = self.right.calc(args)
+            answer1 = self.left.calc(**args)
+            answer2 = self.right.calc(**args)
             if answer1 is None or answer2 is None:
                 return None
             return answer1 and answer2
         if self.type in self.dis:
-            answer1 = self.left.calc(args)
-            answer2 = self.right.calc(args)
+            answer1 = self.left.calc(**args)
+            answer2 = self.right.calc(**args)
             if answer1 is None or answer2 is None:
                 return None
             return answer1 or answer2
         if self.type == '>':
-            answer1 = self.left.calc(args)
-            answer2 = self.right.calc(args)
+            answer1 = self.left.calc(**args)
+            answer2 = self.right.calc(**args)
             if answer1 is None or answer2 is None:
                 return None
             return not answer1 or answer2
         if self.type == '=':
-            answer1 = self.left.calc(args)
-            answer2 = self.right.calc(args)
+            answer1 = self.left.calc(**args)
+            answer2 = self.right.calc(**args)
             if answer1 is None or answer2 is None:
                 return None
             return (answer1 and answer2) or (not answer1 and not answer2)
