@@ -1,3 +1,5 @@
+from string import ascii_letters
+
 class Node:
     nodeType = {'Letter': 0, 'True': 1, 'False': 2, 'Tree': 3}
     dis = {'+', '|'}
@@ -93,3 +95,53 @@ class Node:
                 right = Node()
                 return left.parse(local_form[:found]) and right.parse(local_form[found+1:])
         return True
+
+    def calc(self, **args):
+        if self.type == '-':
+            answer = self.right.calc(args)
+            if answer is None:
+                return None
+            return not answer
+        if self.type in self.con:
+            answer1 = self.left.calc(args)
+            answer2 = self.right.calc(args)
+            if answer1 is None or answer2 is None:
+                return None
+            return answer1 and answer2
+        if self.type in self.dis:
+            answer1 = self.left.calc(args)
+            answer2 = self.right.calc(args)
+            if answer1 is None or answer2 is None:
+                return None
+            return answer1 or answer2
+        if self.type == '>':
+            answer1 = self.left.calc(args)
+            answer2 = self.right.calc(args)
+            if answer1 is None or answer2 is None:
+                return None
+            return not answer1 or answer2
+        if self.type == '=':
+            answer1 = self.left.calc(args)
+            answer2 = self.right.calc(args)
+            if answer1 is None or answer2 is None:
+                return None
+            return (answer1 and answer2) or (not answer1 and not answer2)
+        if self.type == '1':
+            return True
+        if self.type == '0':
+            return False
+        if self.type in ascii_letters:
+            return args.get(self.type, None)
+
+    def args(self):
+        try:
+            if self.type in ascii_letters:
+                return {self.type}
+            if self.type == '-' and self.right is not None:
+                return self.right.args()
+            if self.type in {'=', '>', '+', '|', '*', '&'} and self.left is not None and self.right is not None:
+                return self.left.args() | self.right.args()
+            if self.type in {'1', '0'}:
+                return {}
+        except TypeError:
+            return None
